@@ -5,12 +5,6 @@ const app = express();
 
 //request handler
 
-app.use('/', (err, req, res, next) => {
-    if (err) {
-        res.status(500).send('error occured')
-    }
-})
-
 app.use('/getDataUser', (req,res) => {
     try {
         throw new Error();
@@ -19,7 +13,6 @@ app.use('/getDataUser', (req,res) => {
     }
 
 })
-
 
 //wild card error handler
 app.use('/', (err, req, res, next) => {
