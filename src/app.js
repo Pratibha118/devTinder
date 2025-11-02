@@ -1,23 +1,25 @@
 const express = require('express');
+const { adminAuth } = require('../middlewares/auth');
 
 const app = express();
 
 //request handler
-app.get("/",(req,res) =>{
-    res.send("Hello from server...")
+
+app.use('/getDataUser', (req,res) => {
+    try {
+        throw new Error();
+    } catch (e) {
+        res.status(500).send('something went wrong')
+    }
+
 })
 
-app.get("/hello",(req,res) =>{
-    res.send("Hello...")
+//wild card error handler
+app.use('/', (err, req, res, next) => {
+    if (err) {
+        res.status(500).send('error occured')
+    }
 })
-
-app.get("/test",(req,res) =>{
-    res.send("testing...")
-})
-
-
-
-
 
 
 
