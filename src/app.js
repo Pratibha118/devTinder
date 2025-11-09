@@ -1,19 +1,55 @@
 const express = require('express');
 const { connectDB } = require('./config/database');
-const User = require('./model/user')
+const User = require('./model/user');
+const { validateBody } = require('./utils/validate');
 const app = express();
+const bcrypt = require('bcrypt')
 
 app.use(express.json())
 
 app.post('/signUp', async (req, res) => {
-
-    const user = new User(req.body)
+    const { firstName, lastName, emailId, password } = req.body;
 
     try {
+        //validate body data
+        validateBody(req)
+
+        //encrypt the password
+        const encryptedPass = await bcrypt.hash(password, 10)
+        console.log(encryptedPass)
+
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: encryptedPass,
+        })
         await user.save();
         res.send('Saved data succesfully')
     } catch (err) {
-        res.status(400).send('Error while saving the new user' + err.message);
+        res.status(400).send('Error : ' + err.message);
+    }
+})
+
+app.post('/login', async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+
+        const user = await User.findOne({ emailId: emailId });
+        console.log(user)
+        if (!user) {
+            throw new Error('Invalid credentials')
+        }
+        const isPasswordMatched = await bcrypt.compare(password, user.password)
+
+        if (isPasswordMatched)
+            res.send('User login successfully')
+        else {
+            res.send('Invalid credentials');
+        }
+
+    } catch (err) {
+        res.status(400).send("Error : " + err.message)
     }
 })
 
@@ -62,12 +98,12 @@ app.patch('/user/:userId', async (req, res) => {
         const isAllowed = Object.keys(data).every(k => fields_to_be_updates.includes(k))
         if (!isAllowed) {
             throw new Error('update now allowed')
-        } 
-        if (data?.skills.length > 10){
+        }
+        if (data?.skills.length > 10) {
             throw new Error('Max 10 skills can be added.')
         }
         const user = await User.findByIdAndUpdate(userdID, data, { returnDocument: 'after', runValidators: true })
-            res.send('User updated successfully')
+        res.send('User updated successfully')
     } catch (err) {
         res.status(400).send('Something went wrong ' + err.message)
     }
