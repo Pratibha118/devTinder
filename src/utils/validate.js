@@ -13,4 +13,12 @@ function validateBody(req) {
 
 }
 
-module.exports = { validateBody };
+function validateUpdateFeilds(req){
+    const allowedFeildsToUpdate = ['age','gender','about','skills'];
+
+    const isUpdateAllowed = Object.keys(req.body).every(feild=> allowedFeildsToUpdate.includes(feild) );
+
+    return isUpdateAllowed;
+}
+
+module.exports = { validateBody,validateUpdateFeilds };
