@@ -14,12 +14,10 @@ Patch - /profile/pass
 
 Get - /user/feed
 Get - /user/received/requests
-Get - /user/pending/send/requests
+Get - /user/requests
 Get - /user/connections
 
 ## connectionRequestRouter
 
-Post - /request/send/interested/:userId
-Post - /request/send/ignored/:userId
-Post - /request/review/accepted/:requestID
-Post - /request/review/rejected/:requestID
+Post - /request/send/:status/:userId
+Post - /request/review/:status/:requestID
