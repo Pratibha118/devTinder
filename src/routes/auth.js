@@ -43,7 +43,14 @@ authRouter.post('/login', async (req, res) => {
             const token = await user.getJWT();
             //sending cookie in response (cookie expired date can also be send)
             res.cookie("token", token);
-            res.send('User login successfully');
+            //added while finding issue
+            //  {
+            //     httpOnly: true,
+            //     secure: true,          // required for SameSite=None in Chrome
+            //     sameSite: "lax",      // allows cross-site cookie (port-to-port)
+            //     path: "/",
+            // }
+            res.send(user);
         }
         else {
             res.send('Invalid credentials');
