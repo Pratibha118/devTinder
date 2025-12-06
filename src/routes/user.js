@@ -4,7 +4,7 @@ const ConnectionRequestModel = require('../model/connectionRequest');
 const User = require('../model/user');
 const userRouter = express.Router();
 
-const USER_DETAILS = "firstName lastName age gender skills";
+const USER_DETAILS = "firstName lastName age gender skills imageURL";
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user;
@@ -12,10 +12,13 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
         const connectionRequest = await ConnectionRequestModel.find({
             toUserId: loggedInUser._id,
             status: 'intrested',
-        }).populate("fromUserId", ["firstName", "lastName", "age", "gender", "skills"]).populate("toUserId", ["firstName", "lastName"]);
+        }).populate("fromUserId", ["firstName", "lastName", "age", "gender", "skills", "imageURL"]).populate("toUserId", ["firstName", "lastName"]);
 
         if (connectionRequest.length === 0)
-            res.status(404).send('No requests');
+            res.json({
+                data: [],
+                message: 'No requests'
+            });
 
         res.json({
             message: 'Here is all your connection requests.',
@@ -68,8 +71,8 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
         //pagination
         const page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 10;
-         limit = limit > 50 ? 50 : limit;
-        const skip = (page-1)*limit;
+        limit = limit > 50 ? 50 : limit;
+        const skip = (page - 1) * limit;
 
         //User should get all the other users in feed except
         // 0. their own profile
