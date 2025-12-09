@@ -51,6 +51,10 @@ const userSchema = new mongoose.Schema({
     },
     skills: {
         type: [String]
+    },
+    imageURL: {
+        type : String,
+        default: 'https://static.vecteezy.com/system/resources/previews/000/550/731/original/user-icon-vector.jpg'
     }
 }, {
     timestamps: true
@@ -67,5 +71,14 @@ userSchema.methods.verifyPassword = async function (passwordInputByUser) {
     const isPasswordMatched= await bcrypt.compare(passwordInputByUser, user.password);
     return isPasswordMatched;
 }
+
+userSchema.methods.toJSON = function () {
+    const user = this.toObject();
+    delete user.password;
+    delete user.__v;
+    delete user.createdAt;
+    delete user.updatedAt;
+    return user;
+};
 
 module.exports = mongoose.model('User', userSchema);

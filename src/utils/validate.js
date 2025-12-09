@@ -14,7 +14,7 @@ function validateBody(req) {
 }
 
 function validateUpdateFeilds(req){
-    const allowedFeildsToUpdate = ['age','gender','about','skills'];
+    const allowedFeildsToUpdate = ['firstName','lastName','age','gender','about','skills','imageURL'];
 
     const isUpdateAllowed = Object.keys(req.body).every(feild=> allowedFeildsToUpdate.includes(feild) );
 

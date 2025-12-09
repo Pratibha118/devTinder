@@ -22,8 +22,13 @@ authRouter.post('/signUp', async (req, res) => {
             emailId,
             password: encryptedPass,
         })
-        await user.save();
-        res.send('Saved data succesfully')
+        const newUser = await user.save();
+        const token = await newUser.getJWT();
+        res.cookie("token", token);
+        res.json({
+            message: 'User added successfully.',
+            data: newUser
+        })
     } catch (err) {
         res.status(400).send('Error : ' + err.message);
     }
@@ -43,10 +48,17 @@ authRouter.post('/login', async (req, res) => {
             const token = await user.getJWT();
             //sending cookie in response (cookie expired date can also be send)
             res.cookie("token", token);
-            res.send('User login successfully');
+            //added while finding issue
+            //  {
+            //     httpOnly: true,
+            //     secure: true,          // required for SameSite=None in Chrome
+            //     sameSite: "lax",      // allows cross-site cookie (port-to-port)
+            //     path: "/",
+            // }
+            res.send(user);
         }
         else {
-            res.send('Invalid credentials');
+            throw new Error('Invalid credentials');
         }
 
     } catch (err) {
