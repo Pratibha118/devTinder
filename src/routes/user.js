@@ -1,0 +1,111 @@
+const express = require('express');
+const { userAuth } = require('../../middlewares/auth');
+const ConnectionRequestModel = require('../model/connectionRequest');
+const User = require('../model/user');
+const userRouter = express.Router();
+
+const USER_DETAILS = "firstName lastName age gender skills imageURL";
+userRouter.get("/user/requests/received", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+
+        const connectionRequest = await ConnectionRequestModel.find({
+            toUserId: loggedInUser._id,
+            status: 'intrested',
+        }).populate("fromUserId", ["firstName", "lastName", "age", "gender", "skills", "imageURL"]).populate("toUserId", ["firstName", "lastName"]);
+
+        if (connectionRequest.length === 0)
+            res.json({
+                data: [],
+                message: 'No requests'
+            });
+
+        res.json({
+            message: 'Here is all your connection requests.',
+            data: connectionRequest,
+        })
+
+    } catch (err) {
+        res.status(400).send('Error :' + err.message)
+    }
+})
+
+userRouter.get("/user/connections", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+
+        const connectionRequest = await ConnectionRequestModel.find({
+            $or: [
+                { fromUserId: loggedInUser._id, status: 'accepted' },
+                { toUserId: loggedInUser._id, status: 'accepted' }
+            ]
+        }).populate("fromUserId", USER_DETAILS).populate("toUserId", USER_DETAILS);
+
+        if (connectionRequest.length === 0) {
+            res.send('No connections')
+        }
+
+        //If I am sending the request, then need toUserId details and if I am recieving the request,
+        //then need fromUserID details as connection
+        const data = connectionRequest.map(row => {
+            if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
+                return row.toUserId;
+            } else {
+                return row.fromUserId;
+            }
+        })
+
+        res.json({
+            message: 'Here is all your connections list',
+            data: data
+        })
+
+    } catch (err) {
+        res.status(400).send("Error :" + err.message)
+    }
+})
+
+userRouter.get("/user/feed", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        //pagination
+        const page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+        limit = limit > 50 ? 50 : limit;
+        const skip = (page - 1) * limit;
+
+        //User should get all the other users in feed except
+        // 0. their own profile
+        // 1. to whom they have sent the request
+        // 2. they got request from
+        const connectionRequest = await ConnectionRequestModel.find({
+            $or: [
+                { fromUserId: loggedInUser._id },
+                { toUserId: loggedInUser._id },
+            ]
+        }).select("fromUserId toUserId");
+
+        //create a Set and put these connectionRequests into the Set, to get the unique ids which we 
+        //want to hide from the feed
+        const hideUserFromFeed = new Set();
+        connectionRequest.forEach(value => {
+            hideUserFromFeed.add(value.fromUserId.toString());
+            hideUserFromFeed.add(value.toUserId.toString())
+        })
+
+        const users = await User.find({
+            $and: [
+                { _id: { $nin: Array.from(hideUserFromFeed) } },
+                { _id: { $ne: loggedInUser._id } }
+            ]
+        }).select(USER_DETAILS).skip(skip).limit(limit)
+
+        res.json({
+            data: users
+        })
+    } catch (err) {
+        res.status(400).send("Error :" + err.message)
+    }
+})
+
+module.exports = userRouter;
