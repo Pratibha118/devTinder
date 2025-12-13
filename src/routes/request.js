@@ -3,6 +3,7 @@ const { userAuth } = require('../../middlewares/auth');
 const ConnectionRequest = require('../model/connectionRequest');
 const requestRouter = express.Router();
 const User = require('../model/user');
+const sesSendEmail = require('../utils/sesSendEmail')
 
 requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
     try {
@@ -17,15 +18,12 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
             return res.status(400).send('Invalid status value.')
 
         //check if request already made or toUserId has made request to fromUserId
-        console.log(fromUserId)
-        console.log(toUserId)
         const existingRequets = await ConnectionRequest.find({
             $or: [
                 { fromUserId, toUserId },
                 { fromUserId: toUserId, toUserId: fromUserId },
             ]
         })
-        console.log(existingRequets.length > 0)
         if (existingRequets.length > 0) {
             return res.json({
                 message: 'Request is already sent.'
@@ -43,6 +41,9 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
             status,
         })
         const data = await connectRequest.save();
+
+        const sendEmail = await sesSendEmail.run()
+        console.log("sendEmail",sendEmail)
         res.json({
             message: status === 'intrested' ? `${req.user.firstName} is interested in ${toUser.firstName}` : `${req.user.firstName} ignored ${toUser.firstName}`,
             data
